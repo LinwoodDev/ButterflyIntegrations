@@ -3,13 +3,13 @@ import axios, { isAxiosError } from '@nextcloud/axios'
 import { loadState } from '@nextcloud/initial-state'
 import { t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcContent from '@nextcloud/vue/components/NcContent'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 interface ButterflyConfig {
 	filePath: string | null
@@ -39,6 +39,9 @@ const embedUrl = computed(() => {
 	url.searchParams.set('save', 'true')
 	url.searchParams.set('editable', 'true')
 	url.searchParams.set('language', 'user')
+	if (fileName.value) {
+		url.searchParams.set('fileName', fileName.value)
+	}
 	return url.toString()
 })
 const embedOrigin = computed(() => new URL(embedUrl.value).origin)
@@ -144,11 +147,9 @@ async function saveDocument(message: unknown): Promise<boolean> {
 		const uploadBytes = new Uint8Array(bytes.byteLength)
 		uploadBytes.set(bytes)
 		const response = await axios.put<{ etag: string }>(
-			generateUrl(
-				creating.value
-					? '/apps/butterfly/api/document/create'
-					: '/apps/butterfly/api/document',
-			),
+			generateUrl(creating.value
+				? '/apps/butterfly/api/document/create'
+				: '/apps/butterfly/api/document'),
 			uploadBytes,
 			{
 				params: { path: config.filePath },
@@ -181,34 +182,34 @@ async function handleEmbedMessage(event: MessageEvent<EmbedMessage>) {
 	}
 
 	switch (event.data.type) {
-	case 'getData':
-		stopReadinessHandshake()
-		if (creating.value) {
+		case 'getData':
+			stopReadinessHandshake()
+			if (creating.value) {
+				await saveDocument(event.data.message)
+			} else if (pendingDocument) {
+				const document = pendingDocument
+				pendingDocument = null
+				// A plain number array is intentionally used here. Butterfly's
+				// Dart bridge accepts Lists reliably across web renderers, while a
+				// structured-cloned JavaScript Uint8Array can be ignored silently.
+				sendToButterfly('setData', Array.from(document))
+				loading.value = false
+			}
+			break
+		case 'save':
 			await saveDocument(event.data.message)
-		} else if (pendingDocument) {
-			const document = pendingDocument
+			break
+		case 'exit':
+			if (await saveDocument(event.data.message)) {
+				openFiles()
+			}
+			break
+		case 'error':
+			stopReadinessHandshake()
 			pendingDocument = null
-			// A plain number array is intentionally used here. Butterfly's
-			// Dart bridge accepts Lists reliably across web renderers, while a
-			// structured-cloned JavaScript Uint8Array can be ignored silently.
-			sendToButterfly('setData', Array.from(document))
 			loading.value = false
-		}
-		break
-	case 'save':
-		await saveDocument(event.data.message)
-		break
-	case 'exit':
-		if (await saveDocument(event.data.message)) {
-			openFiles()
-		}
-		break
-	case 'error':
-		stopReadinessHandshake()
-		pendingDocument = null
-		loading.value = false
-		error.value = t('butterfly', 'The embedded editor reported an error.')
-		break
+			error.value = t('butterfly', 'The embedded editor reported an error.')
+			break
 	}
 }
 
@@ -236,7 +237,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-	<NcContent app-name="butterfly">
+	<NcContent appName="butterfly">
 		<NcAppContent :class="$style.content">
 			<NcEmptyContent
 				v-if="!config.filePath"
@@ -250,16 +251,6 @@ onBeforeUnmount(() => {
 			</NcEmptyContent>
 
 			<template v-else>
-				<header :class="$style.header">
-					<div :class="$style.title">
-						<strong>{{ fileName }}</strong>
-						<span v-if="saving">{{ t('butterfly', 'Saving…') }}</span>
-					</div>
-					<NcButton variant="tertiary" @click="openFiles">
-						{{ t('butterfly', 'Back to Files') }}
-					</NcButton>
-				</header>
-
 				<NcNoteCard v-if="error" type="error" :class="$style.error">
 					{{ error }}
 				</NcNoteCard>
@@ -267,6 +258,7 @@ onBeforeUnmount(() => {
 				<div :class="$style.editor">
 					<NcLoadingIcon
 						v-if="loading"
+						:class="$style.loading"
 						:size="48"
 						:name="t('butterfly', 'Loading document')" />
 					<iframe
@@ -297,33 +289,6 @@ onBeforeUnmount(() => {
 	overflow: hidden !important;
 }
 
-.header {
-	display: flex;
-	flex: 0 0 auto;
-	align-items: center;
-	justify-content: space-between;
-	min-height: 52px;
-	padding: 0 12px 0 20px;
-	border-bottom: 1px solid var(--color-border);
-}
-
-.title {
-	display: flex;
-	gap: 12px;
-	align-items: baseline;
-	min-width: 0;
-}
-
-.title strong {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.title span {
-	color: var(--color-text-maxcontrast);
-}
-
 .error {
 	flex: 0 0 auto;
 	margin: 8px 12px;
@@ -338,6 +303,11 @@ onBeforeUnmount(() => {
 	min-height: 0;
 	overflow: hidden;
 	place-items: center;
+}
+
+.loading {
+	z-index: 1;
+	grid-area: 1 / 1;
 }
 
 .frame {

@@ -17,8 +17,8 @@ Nextcloud and are only loaded into the editor while they are open.
 	<category>files</category>
 	<category>office</category>
 	<website>https://butterfly.linwood.dev</website>
-	<bugs>https://github.com/LinwoodDev/Butterfly/issues</bugs>
-	<repository type="git">https://github.com/LinwoodDev/Butterfly.git</repository>
+	<bugs>https://github.com/LinwoodDev/ButterflyNextcloud/issues</bugs>
+	<repository type="git">https://github.com/LinwoodDev/ButterflyNextcloud.git</repository>
 	<dependencies>
 		<nextcloud min-version="31" max-version="34"/>
 	</dependencies>

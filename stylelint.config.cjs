@@ -1,3 +1,1 @@
-module.exports = {
-	extends: 'stylelint-config-recommended-vue',
-}
+module.exports = require('@nextcloud/stylelint-config')
