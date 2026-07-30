@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	  xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>butterfly</id>
+	<name>Butterfly</name>
+	<summary>Edit Butterfly documents in Nextcloud</summary>
+	<description><![CDATA[
+Open and edit Butterfly (`.bfly`) documents directly from Nextcloud Files.
+
+The editor uses Butterfly's supported embed protocol. Documents remain in
+Nextcloud and are only loaded into the editor while they are open.
+	]]></description>
+	<version>0.1.0</version>
+	<licence>AGPL-3.0-or-later</licence>
+	<author mail="contact@linwood.dev" homepage="https://linwood.dev">Linwood</author>
+	<namespace>Butterfly</namespace>
+	<category>files</category>
+	<category>office</category>
+	<website>https://butterfly.linwood.dev</website>
+	<bugs>https://github.com/LinwoodDev/Butterfly/issues</bugs>
+	<repository type="git">https://github.com/LinwoodDev/Butterfly.git</repository>
+	<dependencies>
+		<nextcloud min-version="31" max-version="34"/>
+	</dependencies>
+	<navigations>
+		<navigation>
+			<id>butterfly</id>
+			<name>Butterfly</name>
+			<route>butterfly.page.index</route>
+			<icon>app.svg</icon>
+			<type>link</type>
+		</navigation>
+	</navigations>
+</info>

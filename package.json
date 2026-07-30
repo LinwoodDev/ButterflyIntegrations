@@ -1,0 +1,45 @@
+{
+  "name": "butterfly-nextcloud",
+  "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --mode development build",
+    "lint": "eslint src",
+    "stylelint": "stylelint src/**/*.vue src/**/*.scss src/**/*.css",
+    "typecheck": "vue-tsc --noEmit",
+    "watch": "vite --mode development build --watch"
+  },
+  "browserslist": [
+    "extends @nextcloud/browserslist-config"
+  ],
+  "dependencies": {
+    "@nextcloud/axios": "^2.6.0",
+    "@nextcloud/files": "^4.0.0",
+    "@nextcloud/initial-state": "^3.0.0",
+    "@nextcloud/l10n": "^3.4.1",
+    "@nextcloud/router": "^3.1.0",
+    "@nextcloud/vue": "^9.8.2",
+    "vue": "^3.5.35"
+  },
+  "devDependencies": {
+    "@nextcloud/browserslist-config": "^3.1.2",
+    "@nextcloud/eslint-config": "^8.4.2",
+    "@nextcloud/stylelint-config": "^3.1.1",
+    "@nextcloud/vite-config": "^2.5.2",
+    "@vue/tsconfig": "^0.9.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.2",
+    "vue-tsc": "^3.3.8"
+  },
+  "overrides": {
+    "webdav": {
+      "minimatch": "^10.2.3"
+    }
+  },
+  "engines": {
+    "node": "^24.0.0",
+    "npm": "^11.3.0"
+  }
+}

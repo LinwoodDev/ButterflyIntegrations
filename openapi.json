@@ -1,0 +1,13 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Butterfly",
+        "version": "0.1.0",
+        "description": "Edit Butterfly documents in Nextcloud",
+        "license": {
+            "name": "AGPL-3.0-or-later"
+        }
+    },
+    "paths": {},
+    "tags": []
+}
