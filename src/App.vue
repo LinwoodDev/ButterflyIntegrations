@@ -17,6 +17,7 @@ interface ButterflyConfig {
 	filePath: string | null
 	embedUrl: string
 	create: boolean
+	existingRootNames: string[]
 }
 
 interface EmbedMessage {
@@ -235,7 +236,7 @@ function openFiles() {
 async function createDocument() {
 	openingCreateDialog.value = true
 	try {
-		await startNewDocument()
+		await startNewDocument('/', config.existingRootNames)
 	} finally {
 		openingCreateDialog.value = false
 	}

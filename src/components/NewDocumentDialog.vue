@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * Mirrors Nextcloud Files' NewNodeDialog behavior. The upstream component is
+ * private to the Files app, so it cannot be imported by installed apps.
+ *
+ * @see https://github.com/nextcloud/server/blob/stable34/apps/files/src/components/NewNodeDialog.vue
+ */
 import type { ComponentPublicInstance } from 'vue'
 
 import {
@@ -8,9 +14,10 @@ import {
 	validateFilename,
 } from '@nextcloud/files'
 import { t } from '@nextcloud/l10n'
-import { computed, nextTick, onMounted, ref, watchEffect } from 'vue'
+import { computed, nextTick, onMounted, ref, watch, watchEffect } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 
 const props = defineProps<{
@@ -22,24 +29,16 @@ const emit = defineEmits<{
 	close: [name: string | null]
 }>()
 
-const name = ref(getUniqueName(props.defaultName, props.otherNames ?? []))
+const localDefaultName = ref(props.defaultName)
 const nameInput = ref<ComponentPublicInstance>()
 const form = ref<HTMLFormElement>()
+const validity = ref('')
 
-const fileName = computed(() => {
-	const requestedName = name.value.trim()
-	return requestedName.toLowerCase().endsWith('.bfly')
-		? requestedName
-		: `${requestedName}.bfly`
-})
-const validity = computed(() => getFilenameValidity(fileName.value))
+const isHiddenFileName = computed(() => localDefaultName.value.trim().startsWith('.'))
 
 function getFilenameValidity(value: string): string {
-	if (name.value.trim() === '') {
+	if (value.trim() === '') {
 		return t('butterfly', 'Filename must not be empty.')
-	}
-	if ((props.otherNames ?? []).includes(value)) {
-		return t('butterfly', 'This name is already in use.')
 	}
 
 	try {
@@ -69,7 +68,7 @@ function getFilenameValidity(value: string): string {
 	}
 }
 
-function focusName() {
+function focusInput() {
 	nextTick(() => {
 		const input = nameInput.value?.$el.querySelector('input') as HTMLInputElement | undefined
 		if (!input) {
@@ -77,8 +76,11 @@ function focusName() {
 		}
 
 		input.focus()
-		const extensionLength = name.value.toLowerCase().endsWith('.bfly') ? 5 : 0
-		input.setSelectionRange(0, name.value.length - extensionLength)
+		const extensionIndex = localDefaultName.value.lastIndexOf('.')
+		const basenameLength = extensionIndex > 0
+			? extensionIndex
+			: localDefaultName.value.length
+		input.setSelectionRange(0, basenameLength)
 	})
 }
 
@@ -86,12 +88,29 @@ function submit() {
 	form.value?.requestSubmit()
 }
 
-watchEffect(() => {
-	const input = nameInput.value?.$el.querySelector('input') as HTMLInputElement | undefined
-	input?.setCustomValidity(validity.value)
+watch(() => [props.defaultName, props.otherNames], () => {
+	localDefaultName.value = getUniqueName(props.defaultName, props.otherNames ?? []).trim()
 })
 
-onMounted(focusName)
+watchEffect(() => {
+	const trimmedName = localDefaultName.value.trim()
+	validity.value = (props.otherNames ?? []).includes(trimmedName)
+		? t('butterfly', 'This name is already in use.')
+		: getFilenameValidity(trimmedName)
+	const input = nameInput.value?.$el.querySelector('input') as HTMLInputElement | undefined
+	if (input) {
+		input.setCustomValidity(validity.value)
+		input.reportValidity()
+	}
+})
+
+onMounted(() => {
+	localDefaultName.value = getUniqueName(
+		localDefaultName.value,
+		props.otherNames ?? [],
+	).trim()
+	focusInput()
+})
 </script>
 
 <template>
@@ -103,13 +122,18 @@ onMounted(focusName)
 		<form
 			ref="form"
 			:class="$style.form"
-			@submit.prevent="emit('close', fileName)">
+			@submit.prevent="emit('close', localDefaultName)">
 			<NcTextField
 				ref="nameInput"
-				v-model="name"
+				v-model="localDefaultName"
 				:error="validity !== ''"
 				:helperText="validity"
 				:label="t('butterfly', 'Document name')" />
+
+			<NcNoteCard
+				v-if="isHiddenFileName"
+				type="warning"
+				:text="t('butterfly', 'Files starting with a dot are hidden by default')" />
 		</form>
 
 		<template #actions>

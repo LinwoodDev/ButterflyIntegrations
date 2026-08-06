@@ -13,6 +13,8 @@ use OCP\AppFramework\Http\Attribute\OpenAPI;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\Files\IRootFolder;
+use OCP\IUserSession;
 
 /**
  * @psalm-suppress UnusedClass
@@ -24,6 +26,8 @@ class PageController extends Controller {
 		string $appName,
 		\OCP\IRequest $request,
 		private IInitialState $initialState,
+		private IRootFolder $rootFolder,
+		private IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -37,6 +41,9 @@ class PageController extends Controller {
 			'filePath' => $file,
 			'embedUrl' => self::EMBED_URL,
 			'create' => $create === '1',
+			'existingRootNames' => $file === null
+				? $this->getExistingRootDocumentNames()
+				: [],
 		]);
 
 		$response = new TemplateResponse(
@@ -48,5 +55,25 @@ class PageController extends Controller {
 		$response->setContentSecurityPolicy($policy);
 
 		return $response;
+	}
+
+	/**
+	 * @return list<string>
+	 */
+	private function getExistingRootDocumentNames(): array {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return [];
+		}
+
+		$names = [];
+		foreach ($this->rootFolder->getUserFolder($user->getUID())->getDirectoryListing() as $node) {
+			$name = $node->getName();
+			if (str_ends_with(strtolower($name), '.bfly')) {
+				$names[] = $name;
+			}
+		}
+
+		return $names;
 	}
 }

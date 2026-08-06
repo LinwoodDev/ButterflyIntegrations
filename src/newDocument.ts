@@ -8,17 +8,24 @@ export async function startNewDocument(
 	directory = '/',
 	existingNames: string[] = [],
 ): Promise<void> {
+	const dialogNames = existingNames.flatMap((name) => name.toLowerCase().endsWith('.bfly')
+		? [name, name.slice(0, -5)]
+		: [name])
 	const defaultName = getUniqueName(
 		t('butterfly', 'New Butterfly document.bfly'),
 		existingNames,
 	)
-	const fileName = await spawnDialog(NewDocumentDialog, {
+	const requestedName = await spawnDialog(NewDocumentDialog, {
 		defaultName,
-		otherNames: existingNames,
+		otherNames: dialogNames,
 	})
-	if (!fileName) {
+	if (!requestedName) {
 		return
 	}
+	const trimmedName = requestedName.trim()
+	const fileName = trimmedName.toLowerCase().endsWith('.bfly')
+		? trimmedName
+		: `${trimmedName}.bfly`
 
 	const normalizedDirectory = directory === '/'
 		? ''
