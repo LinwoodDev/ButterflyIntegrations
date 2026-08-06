@@ -4,15 +4,14 @@ import {
 	addNewFileMenuEntry,
 	DefaultType,
 	FileType,
-	getUniqueName,
 	NewMenuEntryCategory,
 	Permission,
 	registerFileAction,
-	validateFilename,
 } from '@nextcloud/files'
 import { t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import AppIcon from '../img/app.svg?raw'
+import { startNewDocument } from './newDocument.ts'
 
 const butterflyAction = {
 	id: 'butterfly-open',
@@ -55,38 +54,9 @@ const newButterflyDocument = {
 	iconSvgInline: AppIcon,
 	order: 20,
 	enabled: (context) => (context.permissions & Permission.CREATE) !== 0,
-	handler(context, content) {
+	async handler(context, content) {
 		const existingNames = content.map((node) => node.basename)
-		const suggestedName = getUniqueName(
-			t('butterfly', 'New Butterfly document.bfly'),
-			existingNames,
-		)
-		const requestedName = window.prompt(
-			t('butterfly', 'Name the new Butterfly document'),
-			suggestedName,
-		)?.trim()
-		if (!requestedName) {
-			return
-		}
-
-		const nameWithExtension = requestedName.toLowerCase().endsWith('.bfly')
-			? requestedName
-			: `${requestedName}.bfly`
-		try {
-			validateFilename(nameWithExtension)
-		} catch {
-			window.alert(t('butterfly', 'The document name is not valid.'))
-			return
-		}
-
-		const fileName = getUniqueName(nameWithExtension, existingNames)
-		const directory = context.path === '/'
-			? ''
-			: context.path.replace(/\/$/, '')
-		const url = new URL(generateUrl('/apps/butterfly/'), window.location.origin)
-		url.searchParams.set('file', `${directory}/${fileName}`)
-		url.searchParams.set('create', '1')
-		window.location.assign(url)
+		await startNewDocument(context.path, existingNames)
 	},
 } satisfies NewMenuEntry
 

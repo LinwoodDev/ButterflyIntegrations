@@ -10,6 +10,8 @@ import NcContent from '@nextcloud/vue/components/NcContent'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import AppIcon from '../img/app.svg?url'
+import { startNewDocument } from './newDocument.ts'
 
 interface ButterflyConfig {
 	filePath: string | null
@@ -27,6 +29,7 @@ const frame = ref<HTMLIFrameElement>()
 const loading = ref(Boolean(config.filePath))
 const saving = ref(false)
 const creating = ref(config.create)
+const openingCreateDialog = ref(false)
 const error = ref('')
 const etag = ref('')
 let pendingDocument: Uint8Array | null = null
@@ -229,6 +232,15 @@ function openFiles() {
 	window.location.assign(filesUrl)
 }
 
+async function createDocument() {
+	openingCreateDialog.value = true
+	try {
+		await startNewDocument()
+	} finally {
+		openingCreateDialog.value = false
+	}
+}
+
 onMounted(() => window.addEventListener('message', handleEmbedMessage))
 onBeforeUnmount(() => {
 	stopReadinessHandshake()
@@ -239,16 +251,49 @@ onBeforeUnmount(() => {
 <template>
 	<NcContent appName="butterfly">
 		<NcAppContent :class="$style.content">
-			<NcEmptyContent
-				v-if="!config.filePath"
-				:name="t('butterfly', 'Open a Butterfly document from Files')"
-				:description="t('butterfly', 'Choose a .bfly file in Nextcloud Files and use Open in Butterfly.')">
-				<template #action>
-					<NcButton variant="primary" @click="openFiles">
-						{{ t('butterfly', 'Open Files') }}
-					</NcButton>
-				</template>
-			</NcEmptyContent>
+			<div v-if="!config.filePath" :class="$style.landing">
+				<NcEmptyContent
+					:name="t('butterfly', 'Create, draw, and organize with Butterfly')"
+					:description="t('butterfly', 'Edit Butterfly documents in your browser while keeping them in Nextcloud.')">
+					<template #icon>
+						<img
+							:class="$style.appIcon"
+							:src="AppIcon"
+							alt="">
+					</template>
+					<template #action>
+						<div :class="$style.actions">
+							<NcButton
+								variant="primary"
+								:disabled="openingCreateDialog"
+								@click="createDocument">
+								{{ t('butterfly', 'New document') }}
+							</NcButton>
+							<NcButton variant="secondary" @click="openFiles">
+								{{ t('butterfly', 'Open from Files') }}
+							</NcButton>
+						</div>
+					</template>
+				</NcEmptyContent>
+
+				<section :class="$style.features" :aria-label="t('butterfly', 'How Butterfly works with Nextcloud')">
+					<article :class="$style.feature">
+						<span :class="$style.step">1</span>
+						<h2>{{ t('butterfly', 'Create or open') }}</h2>
+						<p>{{ t('butterfly', 'Start a document here, or open any .bfly file from Nextcloud Files.') }}</p>
+					</article>
+					<article :class="$style.feature">
+						<span :class="$style.step">2</span>
+						<h2>{{ t('butterfly', 'Edit in your browser') }}</h2>
+						<p>{{ t('butterfly', 'Use the full Butterfly editor without downloading and re-uploading your work.') }}</p>
+					</article>
+					<article :class="$style.feature">
+						<span :class="$style.step">3</span>
+						<h2>{{ t('butterfly', 'Keep it in Nextcloud') }}</h2>
+						<p>{{ t('butterfly', 'Changes save back to Files with protection against overwriting a newer version.') }}</p>
+					</article>
+				</section>
+			</div>
 
 			<template v-else>
 				<NcNoteCard v-if="error" type="error" :class="$style.error">
@@ -292,6 +337,78 @@ onBeforeUnmount(() => {
 .error {
 	flex: 0 0 auto;
 	margin: 8px 12px;
+}
+
+.landing {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 40px;
+	width: 100%;
+	padding: 48px 24px;
+	overflow: auto;
+}
+
+.appIcon {
+	display: block;
+	width: 96px;
+	height: 96px;
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px;
+}
+
+.features {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 16px;
+	width: min(900px, 100%);
+}
+
+.feature {
+	padding: 20px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	background: var(--color-main-background);
+}
+
+.feature h2 {
+	margin: 12px 0 6px;
+	font-size: 1.15rem;
+}
+
+.feature p {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
+	line-height: 1.5;
+}
+
+.step {
+	display: inline-grid;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element-light-text);
+	font-weight: 700;
+	place-items: center;
+}
+
+@media (max-width: 700px) {
+	.landing {
+		justify-content: flex-start;
+		padding: 32px 16px;
+	}
+
+	.features {
+		grid-template-columns: 1fr;
+	}
 }
 
 .editor {
