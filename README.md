@@ -10,7 +10,8 @@ while they are open. The app is based on the official
 
 - Nextcloud 31–34
 - PHP 8.1 or newer
-- Node.js 24.11 or newer in the 24.x release line, and npm 11, for building
+- Node.js 24.11 or newer in the 24.x release line, with Corepack for pnpm 11,
+  for building
   the frontend
 - Composer for PHP development and tests
 
@@ -19,8 +20,9 @@ while they are open. The app is based on the official
 ```bash
 nvm install
 nvm use
-npm ci
-npm run build
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run build
 composer install
 ```
 
@@ -32,8 +34,9 @@ present in an installed or packaged app.
 Build the frontend, then start the included development instance:
 
 ```bash
-npm ci
-npm run build
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run build
 chmod a+rx .
 docker compose up -d
 docker compose exec --user www-data nextcloud php occ app:enable butterfly
@@ -70,7 +73,7 @@ not discover the mounted app and attempted to install it instead.
 ## Checks
 
 ```bash
-npm run check
+pnpm run check
 composer lint
 composer cs:check
 composer psalm

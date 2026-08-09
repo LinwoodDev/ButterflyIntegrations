@@ -1,0 +1,8 @@
+allowBuilds:
+  '@parcel/watcher': true
+  core-js: true
+  esbuild: true
+
+overrides:
+  postcss-html: 1.8.1
+  stylelint-config-html: 1.1.0

@@ -14,7 +14,7 @@ Thank you for helping improve Butterfly's Nextcloud integration.
 ## Development setup
 
 You need Nextcloud 31–34, PHP 8.1 or newer, Composer, Node.js 24.11 or newer
-in the 24.x release line, and npm 11. The included Docker Compose setup
+in the 24.x release line, and Corepack for pnpm 11. The included Docker Compose setup
 provides a local Nextcloud 34 instance.
 
 ```bash
@@ -22,8 +22,9 @@ git clone https://github.com/LinwoodDev/ButterflyNextcloud.git
 cd ButterflyNextcloud
 nvm install
 nvm use
-npm ci
-npm run build
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run build
 composer install
 chmod a+rx .
 docker compose up -d
@@ -47,7 +48,7 @@ Open <http://localhost:8080> and sign in with `admin` / `admin`. Upload a
 Run all checks before opening a pull request:
 
 ```bash
-npm run check
+pnpm run check
 composer lint
 composer cs:check
 composer psalm
@@ -60,7 +61,7 @@ the pull request. Do not commit generated `node_modules`, `vendor`, `js`, or
 
 ## Dependency updates
 
-Use `npm install` when intentionally changing JavaScript constraints, and
-commit both `package.json` and `package-lock.json`. Use `composer update` for
+Use `corepack pnpm update` when intentionally changing JavaScript constraints,
+and commit both `package.json` and `pnpm-lock.yaml`. Use `composer update` for
 PHP tooling and commit the affected Composer lockfiles. Avoid forced upgrades
 that violate the supported Node.js, PHP, or Nextcloud ranges.
