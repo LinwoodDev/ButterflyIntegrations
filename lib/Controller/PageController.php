@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Butterfly\Controller;
 
 use OCA\Butterfly\AppInfo\Application;
+use OCA\Butterfly\Service\EditorHostingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -20,14 +21,13 @@ use OCP\IUserSession;
  * @psalm-suppress UnusedClass
  */
 class PageController extends Controller {
-	private const EMBED_URL = 'https://preview.butterfly.linwood.dev/embed';
-
 	public function __construct(
 		string $appName,
 		\OCP\IRequest $request,
 		private IInitialState $initialState,
 		private IRootFolder $rootFolder,
 		private IUserSession $userSession,
+		private EditorHostingService $hostingService,
 	) {
 		parent::__construct($appName, $request);
 	}
@@ -39,7 +39,7 @@ class PageController extends Controller {
 	public function index(?string $file = null, ?string $create = null): TemplateResponse {
 		$this->initialState->provideInitialState('config', [
 			'filePath' => $file,
-			'embedUrl' => self::EMBED_URL,
+			'embedUrl' => $this->hostingService->getEmbedUrl(),
 			'create' => $create === '1',
 			'existingRootNames' => $file === null
 				? $this->getExistingRootDocumentNames()
@@ -51,7 +51,7 @@ class PageController extends Controller {
 			'index',
 		);
 		$policy = new ContentSecurityPolicy();
-		$policy->addAllowedFrameDomain('https://preview.butterfly.linwood.dev');
+		$policy->addAllowedFrameDomain($this->hostingService->getFrameDomain());
 		$response->setContentSecurityPolicy($policy);
 
 		return $response;

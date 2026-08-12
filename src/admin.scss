@@ -1,0 +1,23 @@
+#butterfly-admin-settings {
+	form {
+		margin-block: 24px;
+	}
+
+	label {
+		display: block;
+		font-weight: 600;
+		margin-block-end: 8px;
+	}
+
+	input[type='url'] {
+		min-width: min(420px, 100%);
+	}
+
+	code {
+		overflow-wrap: anywhere;
+	}
+
+	.butterfly-settings-error {
+		color: var(--color-error-text);
+	}
+}

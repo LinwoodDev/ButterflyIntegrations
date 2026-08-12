@@ -21,7 +21,11 @@ Nextcloud and are only loaded into the editor while they are open.
 	<repository type="git">https://github.com/LinwoodDev/ButterflyNextcloud.git</repository>
 	<dependencies>
 		<nextcloud min-version="31" max-version="34"/>
+		<lib>zip</lib>
 	</dependencies>
+	<settings>
+		<admin>OCA\Butterfly\Settings\Admin</admin>
+	</settings>
 	<navigations>
 		<navigation>
 			<id>butterfly</id>

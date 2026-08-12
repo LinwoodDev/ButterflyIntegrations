@@ -12,3 +12,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Open `.bfly` documents directly from Nextcloud Files.
 - Load and save documents through the Butterfly embed protocol.
 - ETag-based conflict detection when saving.
+- Admin configuration for a custom Butterfly editor domain.
+- Validated ZIP uploads for self-hosting Butterfly web builds in Nextcloud.

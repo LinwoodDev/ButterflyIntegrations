@@ -90,7 +90,15 @@ the Butterfly iframe with `postMessage`, and writes bytes back when Butterfly
 emits `save` or `exit`. Saves include the loaded ETag, so an external change is
 reported instead of overwritten.
 
-The editor iframe currently uses `https://preview.butterfly.linwood.dev/embed`.
+By default, the editor iframe uses `https://preview.butterfly.linwood.dev/embed`.
+An administrator can configure another Butterfly origin or upload a Butterfly
+web-build ZIP under **Administration settings → Additional settings**. Uploaded
+builds are stored in Nextcloud app data and served by this app. The archive is
+accepted only when it has an `index.html` next to exactly one `version.json`,
+with `package_name` set to `"butterfly"` and a string `build_number` of `"193"`
+or higher. Uploading a valid build activates it and clears the custom-domain
+override.
+
 The Nextcloud file name is passed through Butterfly's visual-only `fileName`
 embed option. Butterfly provides the title and exit controls; exiting saves
 the document and returns to its directory in Nextcloud Files. Only messages

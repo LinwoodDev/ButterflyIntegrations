@@ -6,6 +6,7 @@ namespace Controller;
 
 use OCA\Butterfly\AppInfo\Application;
 use OCA\Butterfly\Controller\PageController;
+use OCA\Butterfly\Service\EditorHostingService;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\Files\File;
 use OCP\Files\Folder;
@@ -21,6 +22,9 @@ final class PageControllerTest extends TestCase {
 		$initialState = $this->createMock(IInitialState::class);
 		$rootFolder = $this->createMock(IRootFolder::class);
 		$userSession = $this->createMock(IUserSession::class);
+		$hostingService = $this->createMock(EditorHostingService::class);
+		$hostingService->method('getEmbedUrl')->willReturn('https://preview.butterfly.linwood.dev/embed');
+		$hostingService->method('getFrameDomain')->willReturn('https://preview.butterfly.linwood.dev');
 		$initialState
 			->expects($this->once())
 			->method('provideInitialState')
@@ -40,6 +44,7 @@ final class PageControllerTest extends TestCase {
 			$initialState,
 			$rootFolder,
 			$userSession,
+			$hostingService,
 		);
 		$response = $controller->index('/Notes/example.bfly', '1');
 
@@ -51,6 +56,9 @@ final class PageControllerTest extends TestCase {
 		$initialState = $this->createMock(IInitialState::class);
 		$rootFolder = $this->createMock(IRootFolder::class);
 		$userSession = $this->createMock(IUserSession::class);
+		$hostingService = $this->createMock(EditorHostingService::class);
+		$hostingService->method('getEmbedUrl')->willReturn('https://preview.butterfly.linwood.dev/embed');
+		$hostingService->method('getFrameDomain')->willReturn('https://preview.butterfly.linwood.dev');
 		$userFolder = $this->createMock(Folder::class);
 		$user = $this->createMock(IUser::class);
 		$document = $this->createMock(File::class);
@@ -81,6 +89,7 @@ final class PageControllerTest extends TestCase {
 			$initialState,
 			$rootFolder,
 			$userSession,
+			$hostingService,
 		);
 		$response = $controller->index();
 

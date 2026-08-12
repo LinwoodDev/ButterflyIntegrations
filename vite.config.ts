@@ -3,6 +3,7 @@ import { join, resolve } from 'path'
 
 export default createAppConfig(
 	{
+		admin: resolve(join('src', 'admin.ts')),
 		main: resolve(join('src', 'main.ts')),
 		files: resolve(join('src', 'files.ts')),
 	},
