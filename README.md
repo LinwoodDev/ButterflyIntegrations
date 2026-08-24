@@ -1,111 +1,58 @@
-# Butterfly for Nextcloud
+# Butterfly Integrations
 
-This Nextcloud app opens and edits `.bfly` files with Butterfly's supported
-embed API. Documents stay in Nextcloud and are loaded into the editor only
-while they are open. The app is based on the official
-[Nextcloud app template](https://github.com/nextcloud/app_template) at commit
-`a75bc6ed28ecff0f043f0b36e1b6f46d2d798976`.
+Official integrations that open and edit Butterfly documents in other apps.
+This repository is a pnpm monorepo so browser-facing integrations can share
+the embed protocol and document helpers without coupling their release cycles.
 
-## Requirements
+## Repository layout
 
-- Nextcloud 31–34
-- PHP 8.1 or newer
-- Node.js 24.11 or newer in the 24.x release line, with Corepack for pnpm 11,
-  for building
-  the frontend
-- Composer for PHP development and tests
-
-## Build
-
-```bash
-nvm install
-nvm use
-corepack enable
-pnpm install --frozen-lockfile
-pnpm run build
-composer install
+```text
+integrations/
+  nextcloud/   # implemented and built in CI
+  joplin/      # reserved; not built
+  obsidian/    # reserved; not built
+packages/
+  shared/      # framework-neutral TypeScript helpers
 ```
 
-The generated `js/` and `css/` directories are ignored by Git and must be
-present in an installed or packaged app.
+See [the Nextcloud README](integrations/nextcloud/README.md) for its setup,
+development, and Docker instructions.
 
-## Test with Docker
-
-Build the frontend, then start the included development instance:
+## Development
 
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
-pnpm run build
-chmod a+rx .
-docker compose up -d
-docker compose exec --user www-data nextcloud php occ app:enable butterfly
+pnpm check
 ```
 
-Open <http://localhost:8080> and sign in with `admin` / `admin`. Upload a
-`.bfly` document, then click it or choose **Open in Butterfly** from its action
-menu. You can also create one from **New → New Butterfly document**.
+The root commands intentionally build only implemented integrations. Joplin
+and Obsidian are placeholders and are not pnpm workspace packages yet.
 
-Stop the instance with:
+## Releases and downloads
 
-```bash
-docker compose down
+Each integration versions independently. A Nextcloud release is created from a
+tag such as `nextcloud/v0.1.0`; its version must match both
+`integrations/nextcloud/package.json` and
+`integrations/nextcloud/appinfo/info.xml`. The generic version checker reads
+those sources and the tag prefix from `integrations/nextcloud/integration.json`.
+The matching version section from the integration's changelog becomes the body
+of both its versioned release and, for stable versions, its stable release.
+
+The release workflow maintains immutable version tags and one moving stable
+tag:
+
+```text
+nextcloud/stable
+nextcloud/v0.1.0
+nextcloud/v0.2.0
+nextcloud/v1.0.0
 ```
 
-The Docker volume keeps the test instance between runs. Use
-`docker compose down --volumes` only when you intentionally want a clean
-instance.
+For example, publishing `nextcloud/v1.0.0` creates its immutable GitHub release,
+moves `nextcloud/stable` to the same commit, and replaces the assets on the
+stable GitHub release. Prereleases create only their versioned release.
 
-If `occ app:enable butterfly` reports that it cannot write into the apps
-directory, make sure this app directory is traversable by the container and
-recreate it so Docker applies the SELinux mount label:
+Consumers can use this persistent download URL:
 
-```bash
-chmod a+rx .
-docker compose up -d --force-recreate
-docker compose exec --user www-data nextcloud php occ app:enable butterfly
-```
-
-The Butterfly bind mount is intentionally read-only. Nextcloud does not need
-to write to an app that is already present; that error usually means it could
-not discover the mounted app and attempted to install it instead.
-
-## Checks
-
-```bash
-pnpm run check
-composer lint
-composer cs:check
-composer psalm
-composer test:unit
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete development workflow.
-
-## How documents are handled
-
-The app adds a default Files action for `.bfly` documents. Its authenticated
-controller reads the file from the current user's storage, sends the bytes to
-the Butterfly iframe with `postMessage`, and writes bytes back when Butterfly
-emits `save` or `exit`. Saves include the loaded ETag, so an external change is
-reported instead of overwritten.
-
-By default, the editor iframe uses `https://preview.butterfly.linwood.dev/embed`.
-An administrator can configure another Butterfly origin or upload a Butterfly
-web-build ZIP under **Administration settings → Additional settings**. Uploaded
-builds are stored in Nextcloud app data and served by this app. The archive is
-accepted only when it has an `index.html` next to exactly one `version.json`,
-with `package_name` set to `"butterfly"` and a string `build_number` of `"193"`
-or higher. Uploading a valid build activates it and clears the custom-domain
-override.
-
-The Nextcloud file name is passed through Butterfly's visual-only `fileName`
-embed option. Butterfly provides the title and exit controls; exiting saves
-the document and returns to its directory in Nextcloud Files. Only messages
-from that exact origin and iframe window are accepted.
-
-## Contributing and security
-
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before
-opening a pull request. Please report vulnerabilities according to
-[SECURITY.md](SECURITY.md), rather than through a public issue.
+`https://github.com/LinwoodDev/ButterflyIntegrations/releases/download/nextcloud%2Fstable/butterfly-nextcloud.tar.gz`

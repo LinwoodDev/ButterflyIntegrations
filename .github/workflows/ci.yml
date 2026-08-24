@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   frontend:
-    name: Frontend
+    name: Shared package and Nextcloud frontend
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -25,11 +25,26 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24.11'
+          cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Run frontend checks
-        run: pnpm run check
+        run: pnpm check
+
+      - name: Package the Nextcloud app
+        run: pnpm package:nextcloud
+
+      - name: Upload Nextcloud build
+        uses: actions/upload-artifact@v6
+        with:
+          name: butterfly-nextcloud
+          path: dist/nextcloud
 
   php:
     name: PHP
@@ -45,19 +60,20 @@ jobs:
         with:
           php-version: '8.4'
           coverage: none
+          extensions: zip
           tools: composer:v2
 
       - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer --working-dir=integrations/nextcloud install --no-interaction --prefer-dist --no-progress
 
       - name: Check PHP syntax
-        run: composer lint
+        run: composer --working-dir=integrations/nextcloud lint
 
       - name: Check PHP coding standards
-        run: composer cs:check
+        run: composer --working-dir=integrations/nextcloud cs:check
 
       - name: Run static analysis
-        run: composer psalm
+        run: composer --working-dir=integrations/nextcloud psalm
 
       - name: Run unit tests
-        run: composer test:unit
+        run: composer --working-dir=integrations/nextcloud test:unit

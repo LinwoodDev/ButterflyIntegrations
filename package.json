@@ -1,59 +1,26 @@
 {
-  "name": "butterfly-nextcloud",
+  "name": "butterfly-integrations",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@11.20.0",
-  "description": "Edit Butterfly documents in Nextcloud",
-  "homepage": "https://github.com/LinwoodDev/ButterflyNextcloud#readme",
+  "description": "Official integrations for Butterfly",
+  "homepage": "https://github.com/LinwoodDev/ButterflyIntegrations#readme",
   "bugs": {
-    "url": "https://github.com/LinwoodDev/ButterflyNextcloud/issues"
+    "url": "https://github.com/LinwoodDev/ButterflyIntegrations/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LinwoodDev/ButterflyNextcloud.git"
+    "url": "git+https://github.com/LinwoodDev/ButterflyIntegrations.git"
   },
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "check": "pnpm run lint && pnpm run stylelint && pnpm run typecheck && pnpm run build",
-    "dev": "vite --mode development build",
-    "lint": "eslint src",
-    "stylelint": "stylelint src/**/*.vue src/**/*.scss src/**/*.css",
-    "typecheck": "vue-tsc --noEmit",
-    "watch": "vite --mode development build --watch"
-  },
-  "browserslist": [
-    "extends @nextcloud/browserslist-config"
-  ],
-  "overrides": {
-    "webdav": {
-      "minimatch": "^10.2.3"
-    }
-  },
-  "dependencies": {
-    "@nextcloud/axios": "^2.6.0",
-    "@nextcloud/files": "^4.0.0",
-    "@nextcloud/initial-state": "^3.0.0",
-    "@nextcloud/l10n": "^3.4.1",
-    "@nextcloud/router": "^3.1.0",
-    "@nextcloud/vue": "^9.9.0",
-    "vue": "^3.5.41"
-  },
-  "devDependencies": {
-    "@nextcloud/browserslist-config": "^3.1.2",
-    "@nextcloud/eslint-config": "^9.0.1",
-    "@nextcloud/stylelint-config": "^3.2.2",
-    "@nextcloud/vite-config": "^2.5.4",
-    "@vue/tsconfig": "^0.9.1",
-    "eslint": "^10.8.1",
-    "stylelint": "^17.14.1",
-    "stylelint-config-recommended-scss": "^17.0.1",
-    "stylelint-config-recommended-vue": "^1.6.1",
-    "stylelint-use-logical": "^2.1.3",
-    "typescript": "^6.0.3",
-    "vite": "^7.3.6",
-    "vue-tsc": "^3.3.9"
+    "build": "pnpm --filter @linwood/butterfly-nextcloud build",
+    "check": "pnpm check:versions && pnpm check:policies && pnpm --filter @linwood/butterfly-integration-shared check && pnpm --filter @linwood/butterfly-nextcloud check",
+    "check:nextcloud": "pnpm --filter @linwood/butterfly-nextcloud check",
+    "check:policies": "node --test scripts/shared-policy.test.mjs",
+    "check:versions": "node scripts/integration-version.mjs && node --test scripts/integration-version.test.mjs scripts/changelog-entry.test.mjs",
+    "package:nextcloud": "bash scripts/package-nextcloud.sh"
   },
   "engines": {
     "node": ">=24.11.0 <25",

@@ -1,6 +1,10 @@
 import type { IFileAction, NewMenuEntry } from '@nextcloud/files'
 
 import {
+	BUTTERFLY_DOCUMENT_EXTENSION,
+	BUTTERFLY_DOCUMENT_MIME_TYPE,
+} from '@linwood/butterfly-integration-shared'
+import {
 	addNewFileMenuEntry,
 	DefaultType,
 	FileType,
@@ -26,8 +30,8 @@ const butterflyAction = {
 		return node.type === FileType.File
 			&& (node.permissions & Permission.READ) !== 0
 			&& (
-				node.mime === 'application/x-butterfly'
-				|| node.basename.toLowerCase().endsWith('.bfly')
+				node.mime === BUTTERFLY_DOCUMENT_MIME_TYPE
+				|| node.basename.toLowerCase().endsWith(BUTTERFLY_DOCUMENT_EXTENSION)
 			)
 	},
 	async exec({ nodes }) {

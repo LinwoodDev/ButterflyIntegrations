@@ -1,3 +1,4 @@
+import { BUTTERFLY_DOCUMENT_EXTENSION } from '@linwood/butterfly-integration-shared'
 import { getUniqueName } from '@nextcloud/files'
 import { t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
@@ -8,8 +9,8 @@ export async function startNewDocument(
 	directory = '/',
 	existingNames: string[] = [],
 ): Promise<void> {
-	const dialogNames = existingNames.flatMap((name) => name.toLowerCase().endsWith('.bfly')
-		? [name, name.slice(0, -5)]
+	const dialogNames = existingNames.flatMap((name) => name.toLowerCase().endsWith(BUTTERFLY_DOCUMENT_EXTENSION)
+		? [name, name.slice(0, -BUTTERFLY_DOCUMENT_EXTENSION.length)]
 		: [name])
 	const defaultName = getUniqueName(
 		t('butterfly', 'New Butterfly document.bfly'),
@@ -23,9 +24,9 @@ export async function startNewDocument(
 		return
 	}
 	const trimmedName = requestedName.trim()
-	const fileName = trimmedName.toLowerCase().endsWith('.bfly')
+	const fileName = trimmedName.toLowerCase().endsWith(BUTTERFLY_DOCUMENT_EXTENSION)
 		? trimmedName
-		: `${trimmedName}.bfly`
+		: `${trimmedName}${BUTTERFLY_DOCUMENT_EXTENSION}`
 
 	const normalizedDirectory = directory === '/'
 		? ''

@@ -7,11 +7,17 @@ settings:
 overrides:
   postcss-html: 1.8.1
   stylelint-config-html: 1.1.0
+  webdav>minimatch: ^10.2.3
 
 importers:
 
-  .:
+  .: {}
+
+  integrations/nextcloud:
     dependencies:
+      '@linwood/butterfly-integration-shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@nextcloud/axios':
         specifier: ^2.6.0
         version: 2.6.0(debug@4.4.3(supports-color@10.2.2))(supports-color@10.2.2)
@@ -73,6 +79,12 @@ importers:
       vue-tsc:
         specifier: ^3.3.9
         version: 3.3.9(typescript@6.0.3)
+
+  packages/shared:
+    devDependencies:
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
 packages:
 
@@ -7546,7 +7558,7 @@ snapshots:
       hot-patcher: 2.0.1
       layerr: 3.0.0
       md5: 2.3.0
-      minimatch: 9.0.9
+      minimatch: 10.2.6
       nested-property: 4.0.0
       node-fetch: 3.3.2
       path-posix: 1.0.0

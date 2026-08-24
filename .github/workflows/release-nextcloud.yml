@@ -1,0 +1,146 @@
+name: Release Nextcloud integration
+
+on:
+  push:
+    tags:
+      - 'nextcloud/v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to package without the leading v
+        required: true
+        type: string
+      publish:
+        description: Publish the versioned and stable GitHub releases
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-nextcloud
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and release Nextcloud
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Resolve release version
+        id: release
+        env:
+          DISPATCH_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#nextcloud/v}"
+          else
+            version="${DISPATCH_VERSION#v}"
+          fi
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $version" >&2
+            exit 1
+          fi
+          if [[ "$version" == *-* ]]; then
+            stable=false
+            prerelease=true
+          else
+            stable=true
+            prerelease=false
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "stable=$stable" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+      - name: Verify integration versions
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: node scripts/integration-version.mjs nextcloud "$RELEASE_VERSION"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24.11'
+          cache: pnpm
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check and build frontend
+        run: pnpm check
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          extensions: zip
+          tools: composer:v2
+
+      - name: Install and check PHP dependencies
+        run: |
+          composer --working-dir=integrations/nextcloud install --no-interaction --prefer-dist --no-progress
+          composer --working-dir=integrations/nextcloud lint
+          composer --working-dir=integrations/nextcloud cs:check
+          composer --working-dir=integrations/nextcloud psalm
+          composer --working-dir=integrations/nextcloud test:unit
+
+      - name: Create release archives
+        run: pnpm package:nextcloud
+
+      - name: Create release notes from changelog
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: node scripts/changelog-entry.mjs nextcloud "$RELEASE_VERSION" dist/nextcloud/release-notes.md
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: butterfly-nextcloud-v${{ steps.release.outputs.version }}
+          path: dist/nextcloud
+
+      - name: Publish GitHub release
+        if: github.ref_type == 'tag' || inputs.publish
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: nextcloud/v${{ steps.release.outputs.version }}
+          name: Nextcloud v${{ steps.release.outputs.version }}
+          body_path: dist/nextcloud/release-notes.md
+          prerelease: ${{ steps.release.outputs.prerelease }}
+          make_latest: false
+          files: |
+            dist/nextcloud/butterfly-nextcloud.tar.gz
+            dist/nextcloud/butterfly-nextcloud.zip
+            dist/nextcloud/checksums.txt
+
+      - name: Move stable tag to this release
+        if: ${{ (github.ref_type == 'tag' || inputs.publish) && steps.release.outputs.stable == 'true' }}
+        env:
+          STABLE_TAG: nextcloud/stable
+        run: |
+          git tag --force "$STABLE_TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$STABLE_TAG" --force
+
+      - name: Update stable GitHub release
+        if: ${{ (github.ref_type == 'tag' || inputs.publish) && steps.release.outputs.stable == 'true' }}
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: nextcloud/stable
+          name: Nextcloud Stable
+          body_path: dist/nextcloud/release-notes.md
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          files: |
+            dist/nextcloud/butterfly-nextcloud.tar.gz
+            dist/nextcloud/butterfly-nextcloud.zip
+            dist/nextcloud/checksums.txt

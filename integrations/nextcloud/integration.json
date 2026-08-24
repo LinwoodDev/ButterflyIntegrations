@@ -1,0 +1,17 @@
+{
+  "name": "nextcloud",
+  "changelogPath": "CHANGELOG.md",
+  "releaseTagPrefix": "nextcloud/v",
+  "versionSources": [
+    {
+      "path": "package.json",
+      "type": "json",
+      "property": "version"
+    },
+    {
+      "path": "appinfo/info.xml",
+      "type": "xml",
+      "element": "version"
+    }
+  ]
+}

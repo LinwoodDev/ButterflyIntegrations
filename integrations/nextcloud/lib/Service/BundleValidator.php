@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Butterfly\Service;
 
 final class BundleValidator {
+	// Keep aligned with MINIMUM_BUTTERFLY_BUILD_NUMBER in packages/shared.
 	public const MINIMUM_BUILD_NUMBER = 193;
 
 	private const MAX_ENTRIES = 10000;

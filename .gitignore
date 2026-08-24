@@ -2,13 +2,16 @@
 /*.iml
 /.vscode/
 
-/vendor/
-/vendor-bin/*/vendor/
+/integrations/nextcloud/vendor/
+/integrations/nextcloud/vendor-bin/*/vendor/
 
-/.php-cs-fixer.cache
-/tests/.phpunit.cache
+/integrations/nextcloud/.php-cs-fixer.cache
+/integrations/nextcloud/tests/.phpunit.cache
 
 /node_modules/
-/js/
-/css/
+/integrations/*/node_modules/
+/packages/*/node_modules/
+/integrations/nextcloud/js/
+/integrations/nextcloud/css/
+/dist/
 /graphify-out/

@@ -1,4 +1,13 @@
 <script setup lang="ts">
+import type { ButterflyHostMessageType } from '@linwood/butterfly-integration-shared'
+
+import {
+	createButterflyEmbedUrl,
+	parseButterflyEditorMessageEvent,
+	postButterflyHostMessage,
+	toDocumentBytes,
+	toPostMessageBytes,
+} from '@linwood/butterfly-integration-shared'
 import axios, { isAxiosError } from '@nextcloud/axios'
 import { loadState } from '@nextcloud/initial-state'
 import { t } from '@nextcloud/l10n'
@@ -20,11 +29,6 @@ interface ButterflyConfig {
 	existingRootNames: string[]
 }
 
-interface EmbedMessage {
-	type?: string
-	message?: unknown
-}
-
 const config = loadState<ButterflyConfig>('butterfly', 'config')
 const frame = ref<HTMLIFrameElement>()
 const loading = ref(Boolean(config.filePath))
@@ -38,20 +42,20 @@ let readinessAttempts = 0
 let readinessTimer: ReturnType<typeof window.setTimeout> | undefined
 
 const fileName = computed(() => config.filePath?.split('/').pop() ?? '')
-const embedUrl = computed(() => {
-	const url = new URL(config.embedUrl, window.location.href)
-	url.searchParams.set('save', 'true')
-	url.searchParams.set('editable', 'true')
-	url.searchParams.set('language', 'user')
-	if (fileName.value) {
-		url.searchParams.set('fileName', fileName.value)
-	}
-	return url.toString()
-})
+const embedUrl = computed(() => createButterflyEmbedUrl(
+	config.embedUrl,
+	window.location.href,
+	{
+		editable: true,
+		fileName: fileName.value,
+		language: 'user',
+		save: true,
+	},
+))
 const embedOrigin = computed(() => new URL(embedUrl.value).origin)
 
-function sendToButterfly(type: string, message?: unknown) {
-	frame.value?.contentWindow?.postMessage({ type, message }, embedOrigin.value)
+function sendToButterfly(type: ButterflyHostMessageType, message?: unknown) {
+	postButterflyHostMessage(frame.value?.contentWindow ?? null, embedOrigin.value, type, message)
 }
 
 function stopReadinessHandshake() {
@@ -76,28 +80,6 @@ function requestEmbedReadiness() {
 	readinessAttempts += 1
 	sendToButterfly('getData')
 	readinessTimer = window.setTimeout(requestEmbedReadiness, 500)
-}
-
-function documentBytes(message: unknown): Uint8Array | null {
-	if (message instanceof Uint8Array) {
-		return message
-	}
-	if (message instanceof ArrayBuffer) {
-		return new Uint8Array(message)
-	}
-	if (ArrayBuffer.isView(message)) {
-		return new Uint8Array(message.buffer, message.byteOffset, message.byteLength)
-	}
-	if (Array.isArray(message)) {
-		return Uint8Array.from(message)
-	}
-	if (message !== null && typeof message === 'object') {
-		const values = Object.values(message)
-		if (values.every((value) => Number.isInteger(value))) {
-			return Uint8Array.from(values as number[])
-		}
-	}
-	return null
 }
 
 async function loadDocument() {
@@ -139,7 +121,7 @@ async function saveDocument(message: unknown): Promise<boolean> {
 		return false
 	}
 
-	const bytes = documentBytes(message)
+	const bytes = toDocumentBytes(message)
 	if (!bytes) {
 		error.value = t('butterfly', 'Butterfly returned invalid document data.')
 		return false
@@ -176,35 +158,36 @@ async function saveDocument(message: unknown): Promise<boolean> {
 	}
 }
 
-async function handleEmbedMessage(event: MessageEvent<EmbedMessage>) {
-	if (
-		event.origin !== embedOrigin.value
-		|| event.source !== frame.value?.contentWindow
-		|| typeof event.data?.type !== 'string'
-	) {
+async function handleEmbedMessage(event: MessageEvent<unknown>) {
+	const message = parseButterflyEditorMessageEvent(
+		event,
+		embedOrigin.value,
+		frame.value?.contentWindow ?? null,
+	)
+	if (!message) {
 		return
 	}
 
-	switch (event.data.type) {
+	switch (message.type) {
 		case 'getData':
 			stopReadinessHandshake()
 			if (creating.value) {
-				await saveDocument(event.data.message)
+				await saveDocument(message.message)
 			} else if (pendingDocument) {
 				const document = pendingDocument
 				pendingDocument = null
 				// A plain number array is intentionally used here. Butterfly's
 				// Dart bridge accepts Lists reliably across web renderers, while a
 				// structured-cloned JavaScript Uint8Array can be ignored silently.
-				sendToButterfly('setData', Array.from(document))
+				sendToButterfly('setData', toPostMessageBytes(document))
 				loading.value = false
 			}
 			break
 		case 'save':
-			await saveDocument(event.data.message)
+			await saveDocument(message.message)
 			break
 		case 'exit':
-			if (await saveDocument(event.data.message)) {
+			if (await saveDocument(message.message)) {
 				openFiles()
 			}
 			break

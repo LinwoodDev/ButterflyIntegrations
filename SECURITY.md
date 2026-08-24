@@ -8,7 +8,7 @@ development version.
 ## Reporting a vulnerability
 
 Please use GitHub's
-[private vulnerability reporting](https://github.com/LinwoodDev/ButterflyNextcloud/security/advisories/new).
+[private vulnerability reporting](https://github.com/LinwoodDev/ButterflyIntegrations/security/advisories/new).
 Do not open a public issue for a suspected vulnerability.
 
 Include the affected version, reproduction steps, impact, and any suggested
