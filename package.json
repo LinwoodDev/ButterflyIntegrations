@@ -20,7 +20,9 @@
     "check:nextcloud": "pnpm --filter @linwood/butterfly-nextcloud check",
     "check:policies": "node --test scripts/shared-policy.test.mjs",
     "check:versions": "node scripts/integration-version.mjs && node --test scripts/integration-version.test.mjs scripts/changelog-entry.test.mjs",
-    "package:nextcloud": "bash scripts/package-nextcloud.sh"
+    "check:joplin": "pnpm --filter joplin-plugin-butterfly dist",
+    "package:nextcloud": "bash scripts/package-nextcloud.sh",
+    "package:joplin": "bash scripts/package-joplin.sh"
   },
   "engines": {
     "node": ">=24.11.0 <25",

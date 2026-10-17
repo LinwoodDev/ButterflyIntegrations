@@ -42,8 +42,9 @@ window and origin.
 
 ### 📝 Joplin
 
-Planned. The directory is reserved, but the integration is not implemented or
-built yet.
+Open, create, edit, and save Butterfly documents from within a Joplin panel.
+
+[**Learn more**](integrations/joplin/README.md)
 
 ### 💎 Obsidian
 
@@ -57,7 +58,7 @@ built yet.
 ```text
 integrations/
   nextcloud/   # implemented and built in CI
-  joplin/      # reserved; not built
+  joplin/      # implemented and built in CI
   obsidian/    # reserved; not built
 packages/
   shared/      # framework-neutral TypeScript helpers
@@ -78,7 +79,7 @@ pnpm check
 ```
 
 See the [Nextcloud integration guide](integrations/nextcloud/README.md) for PHP,
-Composer, and Docker setup. Joplin and Obsidian are intentionally excluded from
+Composer, and Docker setup. Obsidian is intentionally excluded from
 the workspace until their implementations exist.
 
 ## Releases

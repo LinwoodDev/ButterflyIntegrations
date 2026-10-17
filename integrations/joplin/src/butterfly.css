@@ -1,0 +1,18 @@
+.butterfly-icon::before {
+    content: "";
+    aspect-ratio: 1 / 1;
+    background: currentColor;
+    display: block;
+    -webkit-mask: url("img/icon.svg") center / contain no-repeat;
+    mask: url("img/icon.svg") center / contain no-repeat;
+}
+
+.butterfly-icon-editor::before {
+    width: 24px;
+}
+
+.butterfly-icon-settings::before {
+    width: 1.25em;
+    position: relative;
+    left: -2px;
+}

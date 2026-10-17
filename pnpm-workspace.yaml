@@ -1,5 +1,6 @@
 packages:
   - integrations/nextcloud
+  - integrations/joplin
   - packages/*
 
 allowBuilds:

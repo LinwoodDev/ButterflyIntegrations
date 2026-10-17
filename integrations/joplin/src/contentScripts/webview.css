@@ -1,0 +1,7 @@
+.butterfly-clickable-image {
+    cursor: pointer;
+}
+
+.butterfly-clickable-image:hover {
+    opacity: 0.95;
+}

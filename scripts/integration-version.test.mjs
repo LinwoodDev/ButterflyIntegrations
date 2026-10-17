@@ -7,7 +7,7 @@ import test from 'node:test'
 import { integrationNames, validateIntegrationVersion } from './integration-version.mjs'
 
 test('discovers only integrations with release metadata', async () => {
-	assert.deepEqual(await integrationNames(), ['nextcloud'])
+	assert.deepEqual(await integrationNames(), ['joplin','nextcloud'])
 })
 
 test('validates every declared version source and builds the release tag', async () => {

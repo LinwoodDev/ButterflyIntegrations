@@ -1,0 +1,7 @@
+{
+  "extraScripts": [
+    "contentScripts/codemirror.ts",
+    "contentScripts/webview.ts",
+    "views/panel.ts"
+  ]
+}

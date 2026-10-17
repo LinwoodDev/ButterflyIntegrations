@@ -1,0 +1,135 @@
+name: Release Joplin integration
+
+on:
+  push:
+    tags:
+      - 'joplin/v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to package without the leading v
+        required: true
+        type: string
+      publish:
+        description: Publish the versioned and stable GitHub releases
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-joplin
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and release Joplin
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Resolve release version
+        id: release
+        env:
+          DISPATCH_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#joplin/v}"
+          else
+            version="${DISPATCH_VERSION#v}"
+          fi
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $version" >&2
+            exit 1
+          fi
+          if [[ "$version" == *-* ]]; then
+            stable=false
+            prerelease=true
+          else
+            stable=true
+            prerelease=false
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "stable=$stable" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+      - name: Verify integration versions
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: node scripts/integration-version.mjs joplin "$RELEASE_VERSION"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24.11'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript typecheck
+        run: pnpm --filter joplin-plugin-butterfly exec tsc --noEmit
+
+      - name: Build shared package and Joplin plugin
+        run: |
+          pnpm --filter @linwood/butterfly-integration-shared check
+          pnpm check:joplin
+
+      - name: Create release archives
+        run: pnpm package:joplin
+
+      - name: Create release notes from changelog
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: node scripts/changelog-entry.mjs joplin "$RELEASE_VERSION" dist/joplin/release-notes.md
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: butterfly-joplin-v${{ steps.release.outputs.version }}
+          path: dist/joplin
+
+      - name: Publish GitHub release
+        if: github.ref_type == 'tag' || inputs.publish
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: joplin/v${{ steps.release.outputs.version }}
+          name: Joplin v${{ steps.release.outputs.version }}
+          body_path: dist/joplin/release-notes.md
+          prerelease: ${{ steps.release.outputs.prerelease }}
+          make_latest: false
+          files: |
+            dist/joplin/dev.linwood.butterfly-joplin.jpl
+            dist/joplin/dev.linwood.butterfly-joplin.json
+            dist/joplin/checksums.txt
+
+      - name: Move stable tag to this release
+        if: ${{ (github.ref_type == 'tag' || inputs.publish) && steps.release.outputs.stable == 'true' }}
+        env:
+          STABLE_TAG: joplin/stable
+        run: |
+          git tag --force "$STABLE_TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$STABLE_TAG" --force
+
+      - name: Update stable GitHub release
+        if: ${{ (github.ref_type == 'tag' || inputs.publish) && steps.release.outputs.stable == 'true' }}
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: joplin/stable
+          name: Joplin Stable
+          body_path: dist/joplin/release-notes.md
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          files: |
+            dist/joplin/dev.linwood.butterfly-joplin.jpl
+            dist/joplin/dev.linwood.butterfly-joplin.json
+            dist/joplin/checksums.txt

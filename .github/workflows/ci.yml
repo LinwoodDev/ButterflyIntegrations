@@ -46,6 +46,36 @@ jobs:
           name: butterfly-nextcloud
           path: dist/nextcloud
 
+  joplin:
+    name: Joplin
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24.11'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Joplin plugin
+        run: pnpm check:joplin
+
+      - name: Upload Joplin build
+        uses: actions/upload-artifact@v6
+        with:
+          name: butterfly-joplin
+          path: integrations/joplin/publish
+
   php:
     name: PHP
     runs-on: ubuntu-latest

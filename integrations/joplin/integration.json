@@ -1,0 +1,17 @@
+{
+	"name": "joplin",
+	"changelogPath": "CHANGELOG.md",
+	"releaseTagPrefix": "joplin/v",
+	"versionSources": [
+		{
+			"path": "package.json",
+			"type": "json",
+			"property": "version"
+		},
+		{
+			"path": "src/manifest.json",
+			"type": "json",
+			"property": "version"
+		}
+	]
+}
