@@ -1,7 +1,7 @@
 module.exports = {
-    default: function (context) {
+    default: function (_context) {
         return {
-            plugin: function (markdownIt, _pluginOptions) {
+            plugin: function (_markdownIt, _pluginOptions) {
             },
             assets: function () {
                 return [

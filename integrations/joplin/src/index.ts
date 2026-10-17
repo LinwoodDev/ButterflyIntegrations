@@ -1,5 +1,5 @@
 import joplin from 'api';
-import {ContentScriptType, SettingItemType, ToolbarButtonLocation} from "../api/types";
+import {ContentScriptType, SettingItemType, ToastType, ToolbarButtonLocation} from "../api/types";
 import {tmpdir} from 'os'
 import {sep} from 'path'
 import {v4 as uuidv4} from 'uuid'
@@ -35,7 +35,7 @@ joplin.plugins.register({
                 section: 'LinwoodButterfly',
             },
         });
-        await joplin.settings.onChange(async (event: ChangeEvent) => {
+        await joplin.settings.onChange(async (_event: ChangeEvent) => {
             await updateIFrameUrl();
         });
         let panelReadinessResolver: (() => void) | null = null;
@@ -50,6 +50,11 @@ joplin.plugins.register({
             ContentScriptType.MarkdownItPlugin,
             'butterfly-md',
             'contentScripts/markdownItPlugin.js'
+        );
+        await joplin.contentScripts.register(
+            ContentScriptType.CodeMirrorPlugin,
+            'butterfly-cm',
+            'contentScripts/codemirror.js',
         );
 
         await joplin.commands.register({
@@ -79,6 +84,12 @@ joplin.plugins.register({
 
         await joplin.views.panels.onMessage(panel, async (message: any) => {
             switch (message.type) {
+                case 'error':
+                    await joplin.views.dialogs.showToast({
+                        type: ToastType.Error,
+                        message: 'Butterfly-Embed returned an error.',
+                    });
+                    return;
                 case 'panelReady':
                     panelReadinessResolver?.();
                     panelReadinessResolver = null;
@@ -86,6 +97,12 @@ joplin.plugins.register({
                     return;
                 case 'getSetting':
                     return await joplin.settings.value(message.data);
+                case 'embedNotReady':
+                    await joplin.views.dialogs.showToast({
+                        type: ToastType.Error,
+                        message: 'Butterfly-Embed did not become ready.',
+                    });
+                // fallthrough
                 case 'exit':
                     loaded = null;
                     await joplin.views.panels.show(panel, false);
@@ -98,12 +115,9 @@ joplin.plugins.register({
                             ['resources', loaded.previewId],
                             null,
                             {
-                                title: 'temp.svg',
-                                filename: 'temp.svg',
                                 updated_time: Date.now(),
                                 user_updated_time: Date.now(),
                                 blob_updated_time: Date.now(),
-                                mime: 'image/svg+xml'
                             },
                             [{
                                 path: `${tempFolder}${loaded.previewId}.svg`
@@ -113,12 +127,9 @@ joplin.plugins.register({
                             ['resources', loaded.documentId],
                             null,
                             {
-                                title: 'myfile.bfly',
-                                filename: 'myfile.bfly',
                                 updated_time: Date.now(),
                                 user_updated_time: Date.now(),
                                 blob_updated_time: Date.now(),
-                                mime: 'application/x-butterfly'
                             },
                             [{
                                 path: `${tempFolder}${loaded.documentId}.bfly`
@@ -164,12 +175,18 @@ joplin.plugins.register({
                                 path: `${tempFolder}${loaded.documentId}.bfly`
                             }]
                         );
-                        await joplin.commands.execute('insertText', `\n![bfly@${loaded.documentId}](:/${loaded.previewId})\n`)
+                        await joplin.commands.execute('insertText', `\n[![bfly](:/${loaded.previewId})](:/${loaded.documentId})\n`);
                     }
+                    await joplin.commands.execute('editor.execCommand', {name: 'butterfly_updateCodeMirrorEditorHook'});
                     return;
             }
-        });
+        })
         await joplin.views.panels.addScript(panel, '/views/panel.js');
+        await joplin.contentScripts.onMessage('butterfly-cm', async (message: { type: string }) => {
+            if (message.type === 'resourceDir') {
+                return await joplin.settings.globalValue('resourceDir');
+            }
+        });
         await joplin.contentScripts.onMessage('butterfly-md', async (message: any) => {
             loaded = new ButterflyDocument(message.documentId, message.previewId);
             if (!await joplin.views.panels.visible(panel)) {
@@ -188,10 +205,14 @@ joplin.plugins.register({
         async function waitForPanelReadiness(): Promise<void> {
             return new Promise<void>((resolve, reject) => {
                 panelReadinessResolver = resolve;
-                window.setTimeout(() => {
+                window.setTimeout(async () => {
                     if (panelReadinessResolver === resolve) {
                         panelReadinessResolver = null;
                         reject(new Error('Panel did not become ready'));
+                        await joplin.views.dialogs.showToast({
+                            type: ToastType.Error,
+                            message: 'Butterfly-Panel in Joplin did not become ready.',
+                        });
                     }
                 }, 5000);
             });
@@ -201,6 +222,4 @@ joplin.plugins.register({
             return uuidv4().replace(/-/g, '')
         }
     }
-
-
 });

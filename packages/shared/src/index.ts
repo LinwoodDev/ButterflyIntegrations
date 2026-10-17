@@ -1,3 +1,3 @@
-export * from './document.ts'
-export * from './embed.ts'
-export * from './version.ts'
+export * from './document'
+export * from './embed'
+export * from './version'

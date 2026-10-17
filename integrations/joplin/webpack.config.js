@@ -185,10 +185,7 @@ const baseConfig = {
             {
                 test: /\.tsx?$/,
                 use: {
-                    loader: 'ts-loader',
-                    options: {
-                        transpileOnly: true,   // no type / syntax checking for files from shared
-                    },
+                    loader: 'ts-loader'
                 },
                 exclude: /node_modules/,
             },
@@ -399,7 +396,6 @@ function main(environ) {
 
     return configs[configName];
 }
-
 
 module.exports = (env) => {
     let exportedConfigs = [];

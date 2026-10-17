@@ -1,11 +1,11 @@
 import {
+    BUTTERFLY_EDITOR_MESSAGE_TYPES,
     ButterflyEditorMessage,
     ButterflyHostMessageType, createButterflyEmbedUrl,
     parseButterflyEditorMessageEvent,
     postButterflyHostMessage,
     toDocumentBytes,
     toPostMessageBytes
-// @ts-ignore
 } from "@linwood/butterfly-integration-shared";
 import {WebviewApi} from "../../api/types";
 
@@ -17,11 +17,15 @@ let previewResolver: ((value: string) => void) | null;
 
 let butterflyOrigin: string;
 
+let operationLock: ButterflyHostMessageType | null;
+
 const iframe = document.querySelector("#butterfly") as HTMLIFrameElement;
 
 window.addEventListener('message', async (event: MessageEvent<unknown>) => {
     const parsed: ButterflyEditorMessage | null = parseButterflyEditorMessageEvent(event, butterflyOrigin, iframe?.contentWindow ?? null);
     if (!parsed) return;
+    if (parsed.type === operationLock) operationLock = null;
+    console.log(`Received from Butterfly: ${parsed.type}`);
     switch (parsed.type) {
         case 'getData':
             if (pendingDocument) {
@@ -40,8 +44,11 @@ window.addEventListener('message', async (event: MessageEvent<unknown>) => {
             });
             break;
         case 'renderSVG':
-            previewResolver?.(parsed.message);
+            previewResolver?.(parsed.message as string);
             previewResolver = null;
+            break;
+        case 'error':
+            webviewApi.postMessage({type: 'error'});
             break;
     }
 });
@@ -60,6 +67,8 @@ async function retrievePreview(): Promise<string> {
 }
 
 webviewApi.onMessage((pluginMsg: any) => {
+    console.log(`Received from plugin: ${pluginMsg.message.type};opLock=${operationLock}`);
+    if (operationLock) return;
     switch (pluginMsg.message.type) {
         case 'setData':
             pendingDocument = toPostMessageBytes(pluginMsg.message.data);
@@ -69,8 +78,8 @@ webviewApi.onMessage((pluginMsg: any) => {
             sendToButterfly('reset');
             break;
         case 'config':
-            butterflyOrigin = pluginMsg.message.origin;
-            iframe.src = createButterflyEmbedUrl(butterflyOrigin + '/embed', window.location.href, {
+            butterflyOrigin = new URL(pluginMsg.message.origin).origin;
+            iframe.src = createButterflyEmbedUrl(new URL('/embed', butterflyOrigin).toString(), window.location.href, {
                 save: true,
                 language: pluginMsg.message.language
             });
@@ -79,6 +88,9 @@ webviewApi.onMessage((pluginMsg: any) => {
 });
 
 function sendToButterfly(type: ButterflyHostMessageType, message?: unknown) {
+    if ((BUTTERFLY_EDITOR_MESSAGE_TYPES as readonly string[]).includes(type))
+        operationLock = type;
+    console.log(`Sending to Butterfly: ${type}`);
     postButterflyHostMessage(iframe?.contentWindow ?? null, butterflyOrigin, type, message)
 }
 

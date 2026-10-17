@@ -75,6 +75,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: TypeScript typecheck
+        run: pnpm --filter joplin-plugin-butterfly exec tsc --noEmit
+
       - name: Build shared package and Joplin plugin
         run: |
           pnpm --filter @linwood/butterfly-integration-shared check

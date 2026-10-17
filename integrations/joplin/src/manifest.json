@@ -4,7 +4,7 @@
 	"app_min_version": "3.6",
 	"version": "0.1.0",
 	"name": "Infinite Canvas with Butterfly",
-	"description": "Seamlessly create and attach your Linwood Butterfly canvases as .png/.svg to your notes.",
+	"description": "Seamlessly create and attach your Linwood Butterfly canvases as .svg to your notes.",
 	"author": "Linwood",
 	"homepage_url": "https://butterfly.linwood.dev/",
 	"repository_url": "https://github.com/LinwoodDev/ButterflyIntegrations/",

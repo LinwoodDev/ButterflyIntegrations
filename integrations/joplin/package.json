@@ -16,6 +16,8 @@
     "@linwood/butterfly-integration-shared": "workspace:*"
   },
   "devDependencies": {
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.13",
     "@types/node": "^18.7.13",
     "chalk": "^4.1.0",
     "copy-webpack-plugin": "^14.0.0",
@@ -24,8 +26,8 @@
     "tar": "^7.5.22",
     "ts-loader": "^9.3.1",
     "typescript": "^4.8.2",
+    "uuid": "^14.0.2",
     "webpack": "^5.74.0",
-    "webpack-cli": "^4.10.0",
-    "uuid": "^14.0.2"
+    "webpack-cli": "^4.10.0"
   }
 }
